@@ -1,0 +1,18 @@
+version: '3.8'
+
+services:
+  bot:
+    build: .
+    container_name: meo_bot
+    restart: unless-stopped
+    env_file:
+      - .env
+    volumes:
+      # Persist database
+      - ./data:/app/database
+      # Mount Google credentials
+      - ./credentials.json:/app/credentials.json:ro
+    environment:
+      - DATABASE_PATH=/app/database/bot.db
+      - GOOGLE_CREDENTIALS_FILE=/app/credentials.json
+
