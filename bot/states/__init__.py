@@ -1,4 +1,4 @@
-from bot.states.registration import RegistrationStates
+from .registration import RegistrationStates
 
 __all__ = ["RegistrationStates"]
 

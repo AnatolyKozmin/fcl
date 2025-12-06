@@ -1,4 +1,4 @@
-from services.google_sheets import GoogleSheetsService
+from .google_sheets import GoogleSheetsService
 
 __all__ = ["GoogleSheetsService"]
 
