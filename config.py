@@ -13,7 +13,7 @@ class BotConfig:
 
 @dataclass
 class DatabaseConfig:
-    path: str = "database/bot.db"
+    path: str = "data/bot.db"
 
 
 @dataclass
@@ -39,7 +39,7 @@ def load_config() -> Config:
             admin_ids=admin_ids
         ),
         db=DatabaseConfig(
-            path=os.getenv("DATABASE_PATH", "database/bot.db")
+            path=os.getenv("DATABASE_PATH", "data/bot.db")
         ),
         google_sheets=GoogleSheetsConfig(
             credentials_file=os.getenv("GOOGLE_CREDENTIALS_FILE", "credentials.json"),

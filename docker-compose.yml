@@ -9,10 +9,10 @@ services:
       - .env
     volumes:
       # Persist database
-      - ./data:/app/database
+      - ./data:/app/data
       # Mount Google credentials
       - ./credentials.json:/app/credentials.json:ro
     environment:
-      - DATABASE_PATH=/app/database/bot.db
+      - DATABASE_PATH=/app/data/bot.db
       - GOOGLE_CREDENTIALS_FILE=/app/credentials.json
 
