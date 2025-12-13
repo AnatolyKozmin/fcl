@@ -24,7 +24,7 @@ class UserKeyboards:
     def get_faculty_keyboard() -> ReplyKeyboardMarkup:
         faculties = [
             "ИТиАБД", "МЭО", "ФЭБ", "СНиМК",
-            "НАБ", "ФШУ", "ФФ", "ЮФ"
+            "НАБ", "ВШУ", "ФФ", "ЮФ"
         ]
         builder = ReplyKeyboardBuilder()
         for faculty in faculties:
