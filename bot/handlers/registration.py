@@ -194,7 +194,7 @@ async def process_phone(message: Message, state: FSMContext):
 # Step 7: Faculty
 @router.message(RegistrationStates.waiting_for_faculty)
 async def process_faculty(message: Message, state: FSMContext):
-    faculties = ["ИТиАБД", "МЭО", "ФЭБ", "СНиМК", "НАБ", "ФШУ", "ФФ", "ЮФ"]
+    faculties = ["ИТиАБД", "МЭО", "ФЭБ", "СНиМК", "НАБ", "ВШУ", "ФФ", "ЮФ"]
     
     if message.text not in faculties:
         await message.answer(
