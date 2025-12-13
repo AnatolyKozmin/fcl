@@ -51,25 +51,29 @@ async def process_full_name(message: Message, state: FSMContext):
 
 
 # Step 2: Study Group
+
 @router.message(RegistrationStates.waiting_for_study_group)
 async def process_study_group(message: Message, state: FSMContext):
-    study_group = message.text.strip().upper()
+    study_group = message.text.strip()
     
-    # Validate format (letters + numbers + dash + number)
-    pattern = r'^[А-ЯA-Z]{1,4}\d{2}-\d{1,2}$'
-    if not re.match(pattern, study_group):
+    # Простая проверка на пустоту и разумную длину
+    if not study_group or len(study_group) > 30:
         await message.answer(
-            "❌ Неверный формат группы.\n"
-            "Введи в формате: <b>ПМ25-1</b>",
+            "❌ Название группы слишком длинное или пустое.\n"
+            "Введи корректное название своей учебной группы.",
             reply_markup=UserKeyboards.get_cancel_keyboard(),
             parse_mode="HTML"
         )
         return
     
+    # Приводим к верхнему регистру для единообразия
+    study_group = study_group.upper()
+    
     await state.update_data(study_group=study_group)
     await state.set_state(RegistrationStates.waiting_for_course)
     
     await message.answer(
+        f"✅ Группа <b>{study_group}</b> сохранена!\n\n"
         "🎓 Выбери свой <b>курс</b>:",
         reply_markup=UserKeyboards.get_course_keyboard(),
         parse_mode="HTML"
