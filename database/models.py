@@ -28,6 +28,7 @@ class User:
     created_at: datetime
     confirmation_sent: bool = False
     
+    
     @classmethod
     def from_row(cls, row: tuple) -> "User":
         return cls(
@@ -51,7 +52,7 @@ class User:
 @dataclass
 class BotSettings:
     registration_open: bool = True
-    max_registrations: int = 0  # 0 = unlimited
+    max_registrations: int = 0  
     
     @classmethod
     def from_row(cls, row: tuple) -> "BotSettings":

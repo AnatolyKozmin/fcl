@@ -11,7 +11,7 @@ from database.repositories import UserRepository, SettingsRepository
 router = Router()
 
 
-# Cancel handler
+
 @router.message(F.text == "❌ Отмена")
 async def cancel_registration(message: Message, state: FSMContext):
     current_state = await state.get_state()
@@ -26,7 +26,7 @@ async def cancel_registration(message: Message, state: FSMContext):
     )
 
 
-# Step 1: Full Name
+
 @router.message(RegistrationStates.waiting_for_full_name)
 async def process_full_name(message: Message, state: FSMContext):
     full_name = message.text.strip()
@@ -51,7 +51,6 @@ async def process_full_name(message: Message, state: FSMContext):
 
 
 # Step 2: Study Group
-
 @router.message(RegistrationStates.waiting_for_study_group)
 async def process_study_group(message: Message, state: FSMContext):
     study_group = message.text.strip()
@@ -80,7 +79,7 @@ async def process_study_group(message: Message, state: FSMContext):
     )
 
 
-# Step 3: Course
+
 @router.message(RegistrationStates.waiting_for_course)
 async def process_course(message: Message, state: FSMContext):
     if message.text not in ["1", "2", "3", "4"]:
@@ -101,7 +100,6 @@ async def process_course(message: Message, state: FSMContext):
     )
 
 
-# Step 4: VK Link
 @router.message(RegistrationStates.waiting_for_vk_link)
 async def process_vk_link(message: Message, state: FSMContext):
     vk_link = message.text.strip()
@@ -127,7 +125,7 @@ async def process_vk_link(message: Message, state: FSMContext):
     )
 
 
-# Step 5: TG Link
+
 @router.message(RegistrationStates.waiting_for_tg_link)
 async def process_tg_link(message: Message, state: FSMContext):
     tg_link = message.text.strip()
@@ -141,8 +139,8 @@ async def process_tg_link(message: Message, state: FSMContext):
             parse_mode="HTML"
         )
         return
-    
-    # Convert @username to link
+
+
     if tg_link.startswith("@"):
         tg_link = f"https://t.me/{tg_link[1:]}"
     
@@ -157,7 +155,7 @@ async def process_tg_link(message: Message, state: FSMContext):
     )
 
 
-# Step 6: Phone
+
 @router.message(RegistrationStates.waiting_for_phone)
 async def process_phone(message: Message, state: FSMContext):
     phone = message.text.strip()
@@ -175,14 +173,16 @@ async def process_phone(message: Message, state: FSMContext):
         )
         return
     
-    # Normalize to +7 format
+
     if phone_clean.startswith("8"):
         phone_clean = "+7" + phone_clean[1:]
     elif phone_clean.startswith("7"):
         phone_clean = "+" + phone_clean
     
+
     await state.update_data(phone=phone_clean)
     await state.set_state(RegistrationStates.waiting_for_faculty)
+    
     
     await message.answer(
         "🏛 Выбери свой <b>факультет</b>:",
@@ -191,10 +191,10 @@ async def process_phone(message: Message, state: FSMContext):
     )
 
 
-# Step 7: Faculty
+
 @router.message(RegistrationStates.waiting_for_faculty)
 async def process_faculty(message: Message, state: FSMContext):
-    faculties = ["ИТиАБД", "МЭО", "ФЭБ", "СНиМК", "НАБ", "ВШУ", "ФФ", "ЮФ"]
+    faculties = ["ИТиАБД", "МЭО", "ФЭБ", "СНиМК", "НАБ", "ФШУ", "ФФ", "ЮФ"]
     
     if message.text not in faculties:
         await message.answer(
@@ -213,7 +213,7 @@ async def process_faculty(message: Message, state: FSMContext):
     )
 
 
-# Step 8: Source
+
 @router.message(RegistrationStates.waiting_for_source)
 async def process_source(message: Message, state: FSMContext):
     sources = [
@@ -242,7 +242,6 @@ async def process_source(message: Message, state: FSMContext):
     )
 
 
-# Step 9: Consent and final registration
 @router.message(RegistrationStates.waiting_for_consent)
 async def process_consent(
     message: Message,
@@ -260,11 +259,9 @@ async def process_consent(
     data = await state.get_data()
     await state.clear()
     
-    # Check registration limits
     settings = await settings_repo.get()
     registered_count = await user_repo.get_registered_count()
     
-    # Determine status based on limit
     if settings.max_registrations > 0 and registered_count >= settings.max_registrations:
         status = UserStatus.RESERVE
         status_text = "📋 <b>В резерве</b>"
@@ -277,7 +274,6 @@ async def process_consent(
         status_text = "✅ <b>Зарегистрирован</b>"
         extra_message = ""
     
-    # Create user
     try:
         user = await user_repo.create(
             telegram_id=message.from_user.id,

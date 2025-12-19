@@ -140,6 +140,32 @@ class UserRepository:
         rows = await cursor.fetchall()
         return [User.from_row(row) for row in rows]
     
+    async def get_users_without_response(self) -> list[User]:
+        """Get users who received confirmation but haven't responded (not CONFIRMED or DECLINED)"""
+        cursor = await self.db.connection.execute(
+            """
+            SELECT * FROM users 
+            WHERE status IN (?, ?) AND confirmation_sent = 1
+            ORDER BY created_at ASC
+            """,
+            (UserStatus.REGISTERED.value, UserStatus.RESERVE.value)
+        )
+        rows = await cursor.fetchall()
+        return [User.from_row(row) for row in rows]
+    
+    async def reset_confirmation_sent_for_non_responded(self) -> int:
+        """Reset confirmation_sent flag for users who haven't responded"""
+        cursor = await self.db.connection.execute(
+            """
+            UPDATE users 
+            SET confirmation_sent = 0 
+            WHERE status IN (?, ?) AND confirmation_sent = 1
+            """,
+            (UserStatus.REGISTERED.value, UserStatus.RESERVE.value)
+        )
+        await self.db.connection.commit()
+        return cursor.rowcount
+    
     async def get_confirmed_users(self) -> list[User]:
         """Get users who confirmed attendance"""
         cursor = await self.db.connection.execute(

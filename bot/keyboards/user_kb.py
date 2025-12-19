@@ -4,13 +4,14 @@ from aiogram.utils.keyboard import ReplyKeyboardBuilder, InlineKeyboardBuilder
 
 class UserKeyboards:
     
+
     @staticmethod
     def get_start_keyboard() -> ReplyKeyboardMarkup:
         builder = ReplyKeyboardBuilder()
         builder.add(KeyboardButton(text="📝 Зарегистрироваться"))
         builder.adjust(1)
         return builder.as_markup(resize_keyboard=True)
-    
+        
     @staticmethod
     def get_course_keyboard() -> ReplyKeyboardMarkup:
         builder = ReplyKeyboardBuilder()
@@ -20,6 +21,7 @@ class UserKeyboards:
         builder.adjust(4, 1)
         return builder.as_markup(resize_keyboard=True)
     
+
     @staticmethod
     def get_faculty_keyboard() -> ReplyKeyboardMarkup:
         faculties = [
@@ -33,6 +35,7 @@ class UserKeyboards:
         builder.adjust(4, 4, 1)
         return builder.as_markup(resize_keyboard=True)
     
+
     @staticmethod
     def get_source_keyboard() -> ReplyKeyboardMarkup:
         sources = [
@@ -48,6 +51,7 @@ class UserKeyboards:
         builder.adjust(1)
         return builder.as_markup(resize_keyboard=True)
     
+
     @staticmethod
     def get_consent_keyboard() -> ReplyKeyboardMarkup:
         builder = ReplyKeyboardBuilder()
@@ -56,12 +60,14 @@ class UserKeyboards:
         builder.adjust(1)
         return builder.as_markup(resize_keyboard=True)
     
+
     @staticmethod
     def get_cancel_keyboard() -> ReplyKeyboardMarkup:
         builder = ReplyKeyboardBuilder()
         builder.add(KeyboardButton(text="❌ Отмена"))
         return builder.as_markup(resize_keyboard=True)
     
+
     @staticmethod
     def get_confirmation_keyboard() -> InlineKeyboardMarkup:
         builder = InlineKeyboardBuilder()
@@ -71,6 +77,7 @@ class UserKeyboards:
         )
         builder.adjust(1)
         return builder.as_markup()
+    
     
     @staticmethod
     def remove_keyboard() -> ReplyKeyboardMarkup:

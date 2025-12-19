@@ -19,7 +19,7 @@ async def cmd_start(
 ):
     await state.clear()
     
-    # Check if registration is open
+
     settings = await settings_repo.get()
     
     if not settings.registration_open:
@@ -31,7 +31,7 @@ async def cmd_start(
         )
         return
     
-    # Check if user already registered
+
     existing_user = await user_repo.get_by_telegram_id(message.from_user.id)
     if existing_user:
         await message.answer(
@@ -58,7 +58,7 @@ async def start_registration(
     user_repo: UserRepository,
     settings_repo: SettingsRepository
 ):
-    # Check if registration is open
+
     settings = await settings_repo.get()
     
     if not settings.registration_open:
@@ -68,7 +68,7 @@ async def start_registration(
         )
         return
     
-    # Check if user already registered
+
     existing_user = await user_repo.get_by_telegram_id(message.from_user.id)
     if existing_user:
         await message.answer(
@@ -84,4 +84,3 @@ async def start_registration(
         reply_markup=UserKeyboards.get_cancel_keyboard(),
         parse_mode="HTML"
     )
-

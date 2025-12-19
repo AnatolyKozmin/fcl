@@ -20,40 +20,39 @@ logger = logging.getLogger(__name__)
 
 
 async def main():
-    # Load config
+
     config = load_config()
     
     if not config.bot.token:
         logger.error("BOT_TOKEN is not set!")
         return
-    
-    # Initialize database
+
     db = Database(config.db.path)
     await db.connect()
     logger.info("Database connected")
     
-    # Initialize repositories
+
     user_repo = UserRepository(db)
     settings_repo = SettingsRepository(db)
     
-    # Initialize Google Sheets service
+ 
     sheets_service = GoogleSheetsService(
         config.google_sheets.credentials_file,
         config.google_sheets.spreadsheet_id
     )
     
-    # Initialize bot and dispatcher
+
     bot = Bot(
         token=config.bot.token,
         default=DefaultBotProperties(parse_mode=ParseMode.HTML)
     )
     dp = Dispatcher(storage=MemoryStorage())
     
-    # Register routers
+
     for router in get_all_routers():
         dp.include_router(router)
     
-    # Inject dependencies
+
     dp["config"] = config
     dp["user_repo"] = user_repo
     dp["settings_repo"] = settings_repo
