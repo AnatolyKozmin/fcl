@@ -18,6 +18,7 @@ class AdminStates(StatesGroup):
     waiting_for_limit = State()
     waiting_for_delete_id = State()
     waiting_for_promote_count = State()
+    waiting_for_text_message = State()
 
 
 def is_admin(user_id: int, config: Config) -> bool:
@@ -837,4 +838,207 @@ async def admin_export_confirmation(
             reply_markup=AdminKeyboards.get_back_button(),
             parse_mode="HTML"
         )
+
+
+# Text broadcast
+@router.callback_query(F.data == "admin_text_broadcast")
+async def admin_text_broadcast(callback: CallbackQuery, config: Config):
+    if not is_admin(callback.from_user.id, config):
+        await callback.answer("Нет доступа", show_alert=True)
+        return
+    
+    await callback.message.edit_text(
+        "💬 <b>Рассылка текстового сообщения</b>\n\n"
+        "Выбери категорию получателей:",
+        reply_markup=AdminKeyboards.get_text_broadcast_recipients(),
+        parse_mode="HTML"
+    )
+
+
+@router.callback_query(F.data.startswith("text_broadcast:"))
+async def text_broadcast_select_recipients(
+    callback: CallbackQuery,
+    config: Config,
+    user_repo: UserRepository,
+    state: FSMContext
+):
+    if not is_admin(callback.from_user.id, config):
+        await callback.answer("Нет доступа", show_alert=True)
+        return
+    
+    recipient_type = callback.data.split(":")[1]
+    
+    # Get users based on type
+    if recipient_type == "all":
+        users = await user_repo.get_all()
+    elif recipient_type == "registered":
+        users = await user_repo.get_all(UserStatus.REGISTERED)
+    elif recipient_type == "reserve":
+        users = await user_repo.get_all(UserStatus.RESERVE)
+    elif recipient_type == "confirmed":
+        users = await user_repo.get_all(UserStatus.CONFIRMED)
+    elif recipient_type == "declined":
+        users = await user_repo.get_all(UserStatus.DECLINED)
+    else:
+        await callback.answer("Неверный тип получателей", show_alert=True)
+        return
+    
+    if not users:
+        recipient_names = {
+            "all": "участников",
+            "registered": "зарегистрированных",
+            "reserve": "в резерве",
+            "confirmed": "подтвердивших",
+            "declined": "отказавшихся"
+        }
+        await callback.message.edit_text(
+            f"❌ <b>Нет получателей</b>\n\n"
+            f"Нет {recipient_names.get(recipient_type, 'участников')} для рассылки.",
+            reply_markup=AdminKeyboards.get_back_button(),
+            parse_mode="HTML"
+        )
+        return
+    
+    # Save recipient type and count to state
+    await state.update_data(
+        text_broadcast_type=recipient_type,
+        text_broadcast_count=len(users)
+    )
+    
+    await state.set_state(AdminStates.waiting_for_text_message)
+    
+    recipient_names = {
+        "all": "всем участникам",
+        "registered": "зарегистрированным",
+        "reserve": "в резерве",
+        "confirmed": "подтвердившим",
+        "declined": "отказавшимся"
+    }
+    
+    await callback.message.edit_text(
+        f"💬 <b>Рассылка текстового сообщения</b>\n\n"
+        f"📊 Получатели: {recipient_names.get(recipient_type, 'участники')} ({len(users)} чел.)\n\n"
+        f"📝 <b>Введи текст сообщения:</b>\n"
+        f"(Поддерживается HTML-разметка)",
+        reply_markup=AdminKeyboards.get_cancel_button(),
+        parse_mode="HTML"
+    )
+
+
+@router.message(AdminStates.waiting_for_text_message)
+async def process_text_message(
+    message: Message,
+    state: FSMContext,
+    config: Config,
+    user_repo: UserRepository
+):
+    if not is_admin(message.from_user.id, config):
+        return
+    
+    data = await state.get_data()
+    recipient_type = data.get("text_broadcast_type")
+    count = data.get("text_broadcast_count", 0)
+    
+    text_message = message.text or message.caption or ""
+    
+    if not text_message.strip():
+        await message.answer(
+            "❌ Сообщение не может быть пустым.\n"
+            "Введи текст сообщения:",
+            reply_markup=AdminKeyboards.get_cancel_button()
+        )
+        return
+    
+    # Save message to state
+    await state.update_data(text_broadcast_message=text_message)
+    
+    recipient_names = {
+        "all": "всем участникам",
+        "registered": "зарегистрированным",
+        "reserve": "в резерве",
+        "confirmed": "подтвердившим",
+        "declined": "отказавшимся"
+    }
+    
+    await message.answer(
+        f"📋 <b>Предпросмотр рассылки</b>\n\n"
+        f"📊 Получатели: {recipient_names.get(recipient_type, 'участники')} ({count} чел.)\n\n"
+        f"💬 <b>Сообщение:</b>\n"
+        f"{text_message}\n\n"
+        f"Подтвердить отправку?",
+        reply_markup=AdminKeyboards.get_confirm_text_broadcast(recipient_type, count),
+        parse_mode="HTML"
+    )
+
+
+@router.callback_query(F.data.startswith("text_broadcast_confirm:"))
+async def do_text_broadcast(
+    callback: CallbackQuery,
+    config: Config,
+    user_repo: UserRepository,
+    bot: Bot,
+    state: FSMContext
+):
+    if not is_admin(callback.from_user.id, config):
+        await callback.answer("Нет доступа", show_alert=True)
+        return
+    
+    recipient_type = callback.data.split(":")[1]
+    data = await state.get_data()
+    text_message = data.get("text_broadcast_message")
+    
+    if not text_message:
+        await callback.answer("Ошибка: сообщение не найдено", show_alert=True)
+        await state.clear()
+        return
+    
+    # Get users based on type
+    if recipient_type == "all":
+        users = await user_repo.get_all()
+    elif recipient_type == "registered":
+        users = await user_repo.get_all(UserStatus.REGISTERED)
+    elif recipient_type == "reserve":
+        users = await user_repo.get_all(UserStatus.RESERVE)
+    elif recipient_type == "confirmed":
+        users = await user_repo.get_all(UserStatus.CONFIRMED)
+    elif recipient_type == "declined":
+        users = await user_repo.get_all(UserStatus.DECLINED)
+    else:
+        await callback.answer("Неверный тип получателей", show_alert=True)
+        await state.clear()
+        return
+    
+    await state.clear()
+    await callback.message.edit_text("📤 Рассылка начата...")
+    
+    success = 0
+    failed = 0
+    
+    for user in users:
+        try:
+            await bot.send_message(
+                user.telegram_id,
+                text_message,
+                parse_mode="HTML"
+            )
+            success += 1
+        except Exception:
+            failed += 1
+    
+    recipient_names = {
+        "all": "всем участникам",
+        "registered": "зарегистрированным",
+        "reserve": "в резерве",
+        "confirmed": "подтвердившим",
+        "declined": "отказавшимся"
+    }
+    
+    await callback.message.edit_text(
+        f"✅ <b>Рассылка завершена</b>\n\n"
+        f"📊 Получатели: {recipient_names.get(recipient_type, 'участники')}\n"
+        f"✅ Отправлено: {success}\n"
+        f"❌ Ошибок: {failed}",
+        reply_markup=AdminKeyboards.get_back_button(),
+        parse_mode="HTML"
+    )
 
